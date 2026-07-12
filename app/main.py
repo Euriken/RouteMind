@@ -103,6 +103,9 @@ def solve():
         "difficulty":  result["difficulty"],
         "task_type":   result["task_type"],
         "used_gemma":  result.get("used_gemma", False),
+        "was_compressed": result.get("was_compressed", False),
+        "original_word_count": result.get("original_word_count", 0),
+        "compressed_word_count": result.get("compressed_word_count", 0),
     })
 
 

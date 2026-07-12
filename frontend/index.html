@@ -1027,6 +1027,38 @@
     return el;
   }
 
+  function fallbackCopyText(text, successCallback) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful && successCallback) {
+        successCallback();
+      }
+    } catch (err) {
+      console.error('Fallback copy failed', err);
+    }
+    document.body.removeChild(textArea);
+  }
+
+  function copyText(text, successCallback) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (successCallback) successCallback();
+      }).catch(() => {
+        fallbackCopyText(text, successCallback);
+      });
+    } else {
+      fallbackCopyText(text, successCallback);
+    }
+  }
+
   function insertResultCard(task, data, latency) {
     const card = document.createElement('div');
     card.className = 'result-card';
@@ -1054,9 +1086,12 @@
           <div class="timeline-step success">💻 Running Local Self-Consistency<span class="timeline-step-time">Confidence: ${confidence} (≥ threshold)</span></div>
           <div class="timeline-step active success">💻 Local Inference serving result<span class="timeline-step-time">Completed in ${latency}ms</span></div>`;
       } else {
+        const compDetail = data.was_compressed 
+          ? `Reduced prompt from ${data.original_word_count} to ${data.compressed_word_count} words`
+          : 'Skipped (prompt length below threshold)';
         stepsHtml += `
           <div class="timeline-step success">💻 Running Local Self-Consistency<span class="timeline-step-time">Confidence: ${confidence} (&lt; threshold)</span></div>
-          <div class="timeline-step success">✂ Prompt Compression applied<span class="timeline-step-time">Optimizing context length</span></div>
+          <div class="timeline-step success">✂ Prompt Compression applied<span class="timeline-step-time">${compDetail}</span></div>
           <div class="timeline-step active success">🔥 Escalating to Fireworks API<span class="timeline-step-time">${routeLabel(data.route)} serving result</span></div>`;
       }
     }
@@ -1064,7 +1099,10 @@
     card.innerHTML = `
       <div class="result-header">
         <div class="result-preview" title="${esc(task)}">${esc(task)}</div>
-        <div class="result-time">${timestamp}</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="copy-card-btn" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-size:11px;padding:2px 8px;cursor:pointer;transition:all 0.2s;font-family:inherit;font-weight:600;">Copy Response</button>
+          <div class="result-time">${timestamp}</div>
+        </div>
       </div>
       <div class="result-content-grid">
         <div class="result-answer">${renderedContent}</div>
@@ -1085,6 +1123,21 @@
 
     resultsPanel.insertBefore(card, resultsPanel.firstChild);
 
+    // Apply Copy Action to whole response card
+    card.querySelector('.copy-card-btn').addEventListener('click', (e) => {
+      const btn = e.target;
+      copyText(data.answer || '', () => {
+        btn.textContent = 'Copied!';
+        btn.style.color = 'var(--green)';
+        btn.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        setTimeout(() => {
+          btn.textContent = 'Copy Response';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.borderColor = 'var(--border)';
+        }, 2000);
+      });
+    });
+
     // Apply Code Snippet Copy Action to codeblocks
     card.querySelectorAll('pre').forEach(pre => {
       const copyBtn = document.createElement('button');
@@ -1094,11 +1147,11 @@
 
       copyBtn.addEventListener('click', () => {
         const codeText = pre.querySelector('code').textContent;
-        navigator.clipboard.writeText(codeText);
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+        copyText(codeText, () => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+        });
       });
-    });
   }
 
   function insertErrorCard(task, err) {

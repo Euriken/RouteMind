@@ -76,6 +76,9 @@ class RouteResult(TypedDict):
     difficulty: int
     task_type: str
     used_gemma: bool    # Always False — Gemma serverless tier removed (see fireworks_client.py)
+    was_compressed: bool
+    original_word_count: int
+    compressed_word_count: int
 
 
 def _tier_to_route(tier: str) -> str:
@@ -128,6 +131,9 @@ def _route_inner(task: str, t_start: float | None = None) -> RouteResult:
             difficulty=0,
             task_type="cached",
             used_gemma=False,
+            was_compressed=False,
+            original_word_count=0,
+            compressed_word_count=0,
         )
 
     # ------------------------------------------------------------------
@@ -177,6 +183,9 @@ def _route_inner(task: str, t_start: float | None = None) -> RouteResult:
             difficulty=difficulty,
             task_type=task_type,
             used_gemma=False,
+            was_compressed=False,
+            original_word_count=0,
+            compressed_word_count=0,
         )
 
     # ------------------------------------------------------------------
@@ -184,7 +193,10 @@ def _route_inner(task: str, t_start: float | None = None) -> RouteResult:
     # (SPEC.md §4 Tier 2 item 10 & 12)
     # ------------------------------------------------------------------
     _check_timeout(t_start)
+    orig_words = len(task.split())
     compressed_task = compress(task)
+    comp_words = len(compressed_task.split())
+    was_compressed = comp_words < orig_words
 
     fw = FireworksClient()
     fw_answer, fw_tokens, final_tier = fw.solve_with_escalation(compressed_task)
@@ -205,4 +217,7 @@ def _route_inner(task: str, t_start: float | None = None) -> RouteResult:
         difficulty=difficulty,
         task_type=task_type,
         used_gemma=used_gemma,
+        was_compressed=was_compressed,
+        original_word_count=orig_words,
+        compressed_word_count=comp_words,
     )
