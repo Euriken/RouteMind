@@ -13,6 +13,7 @@ import logging
 
 import requests as _requests
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 from router import route
@@ -23,6 +24,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
+CORS(app)  # allow cross-origin requests from the browser frontend
 
 _OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434")
 
