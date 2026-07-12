@@ -258,7 +258,7 @@ Documenting these honestly rather than hiding them:
 
 1. **`FIREWORKS_API_KEY` required for full function** — tasks where the local model's self-consistency score falls below the per-difficulty threshold are escalated to Fireworks. Without the key, those requests return HTTP 502. Easy fix: set the key in `.env` before running.
 
-2. **In-memory semantic cache** — the FAISS index lives only in the orchestrator process. A container restart clears the cache. For a multi-day hackathon, adding disk persistence (pickle/SQLite) would preserve warm-cache benefits across restarts.
+2. **Semantic cache persistence is periodic, not continuous** — the FAISS index is persisted to `/app/cache_data` (mounted as a host volume in `docker-compose.yml`) and is loaded automatically on container restart, so warm-cache entries survive normal restarts. However, saves are batched: `semantic_cache.py` flushes to disk every 5 stores rather than on every write, to reduce I/O. This means up to 4 new cache entries since the last flush could be lost if the container is killed uncleanly (e.g. `docker kill`, OOM). On a clean stop (`docker compose down`) the in-flight entries are not flushed either — a shutdown hook flushing on `SIGTERM` would close this gap.
 
 3. **Ollama model pull is manual** — there is no entrypoint script that auto-pulls `qwen2.5:1.5b` on first boot. If the orchestrator starts before the model is ready, it will auto-escalate every request to Fireworks (which is correct behaviour, but costs tokens). A `healthcheck` + `restart: on-failure` in docker-compose would handle this automatically.
 
