@@ -1,0 +1,32 @@
+services:
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  orchestrator:
+    build: .
+    ports:
+      - "5050:5000"
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:1.5b}
+      - REQUEST_TIMEOUT_S=${REQUEST_TIMEOUT_S:-30}
+    env_file:
+      - .env
+    volumes:
+      # Persist Hugging Face model cache (all-MiniLM-L6-v2 ~90 MB)
+      # so it is not re-downloaded on every container restart.
+      - hf_cache:/root/.cache/huggingface
+      # Persist run logs across restarts
+      - ./logs:/app/../logs
+      # Persist semantic cache across restarts
+      - ./cache_data:/app/cache_data
+
+volumes:
+  ollama_data:
+  hf_cache:

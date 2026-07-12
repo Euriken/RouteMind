@@ -1,0 +1,15 @@
+flask>=3.0.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Day 3 — semantic caching (SPEC.md §4 Tier 2 item 8)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+numpy>=1.26.0
+
+# Day 4 — no new third-party packages required.
+# Escalation ladder, threshold tuner, health check, and error hardening all
+# rely on stdlib (re, logging, argparse, json, os) plus the packages above.
