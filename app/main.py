@@ -10,6 +10,7 @@ Endpoints:
 import time
 import os
 import logging
+import atexit
 
 import requests as _requests
 from flask import Flask, request, jsonify
@@ -19,9 +20,19 @@ from dotenv import load_dotenv
 from router import route
 from logger import log_run
 from stats import get_stats
+from semantic_cache import cache as _cache
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
+
+@atexit.register
+def save_cache_on_exit():
+    logging.info("Flask server shutting down. Saving semantic cache to disk...")
+    try:
+        _cache.save_to_disk()
+        logging.info("Semantic cache successfully saved to disk.")
+    except Exception as e:
+        logging.error("Failed to save semantic cache on exit: %s", e)
 
 app = Flask(__name__)
 CORS(app)  # allow cross-origin requests from the browser frontend

@@ -4,6 +4,8 @@
 
 **One-line pitch:** RouteMind solves any task using the cheapest possible model chain — a local quantized model handles what it can, escalates to Fireworks AI only when confidence, complexity, or accuracy risk demands it, and logs every token to prove it.
 
+![RouteMind Dashboard Screenshot](dashboard.png)
+
 ---
 
 ## Architecture

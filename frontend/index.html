@@ -938,7 +938,13 @@
       const pct = d.estimated_tokens_if_all_large_tier
         ? Math.round((saved / d.estimated_tokens_if_all_large_tier) * 100)
         : 0;
-      document.getElementById('stat-saved-pct').textContent = `${Math.max(0, pct)}% vs. large model`;
+
+      // Estimate USD savings assuming $0.90/M tokens for large models and $0.20/M for small models (local is $0.00)
+      const costAllLarge = (d.estimated_tokens_if_all_large_tier || 0) * 0.90 / 1000000;
+      const costActual = (d.total_tokens_spent || 0) * 0.20 / 1000000;
+      const usdSaved = Math.max(0, costAllLarge - costActual);
+
+      document.getElementById('stat-saved-pct').textContent = `${Math.max(0, pct)}% vs. large model ($${usdSaved.toFixed(4)} saved)`;
 
       // Update Chart
       const lp = d.local_percentage || 0;
@@ -1152,6 +1158,7 @@
           setTimeout(() => copyBtn.textContent = 'Copy', 2000);
         });
       });
+    });
   }
 
   function insertErrorCard(task, err) {
