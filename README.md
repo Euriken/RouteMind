@@ -301,4 +301,3 @@ RouteMind/
 ```
 
 Full architecture spec → [SPEC.md](SPEC.md)
----
